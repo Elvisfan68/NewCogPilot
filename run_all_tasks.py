@@ -1,5 +1,7 @@
 from psychopy import gui, core
 import sys
+import inspect
+import types
 
 # Set a global flag so the tasks know they're being run in sequence
 RUNNING_ALL_TASKS = True
@@ -51,7 +53,6 @@ else:
         ABart_Top_Off_Color_v2.BART.get_participant_info = orig_get_participant_info
 
 # --- PVT ---
-import inspect
 def run_pvt_with_args(participant_id, treatment):
     # Try to call with arguments if possible, else patch the dialog
     sig = inspect.signature(PVT_Script.run_pvt_study)
@@ -76,21 +77,25 @@ def run_pvt_with_args(participant_id, treatment):
 run_pvt_with_args(participant_id, treatment)
 
 # --- Trailmaking ---
-if hasattr(V4_Trailmaking_Script, 'run_experiment') and V4_Trailmaking_Script.run_experiment.__code__.co_argcount >= 2:
-    V4_Trailmaking_Script.run_experiment(participant_id, treatment)
-else:
-    # Monkeypatch: override dialog in Trailmaking
-    orig_run_experiment = getattr(V4_Trailmaking_Script, 'run_experiment', None)
-    def patched_run_experiment():
-        return orig_run_experiment(participant_id=participant_id, treatment=treatment)
-    if orig_run_experiment:
-        import types
-        V4_Trailmaking_Script.run_experiment = types.FunctionType(
-            orig_run_experiment.__code__,
-            orig_run_experiment.__globals__,
-            name=orig_run_experiment.__name__,
-            argdefs=orig_run_experiment.__defaults__,
-            closure=orig_run_experiment.__closure__
-        )
-        V4_Trailmaking_Script.run_experiment = lambda: orig_run_experiment(participant_id=participant_id, treatment=treatment)
-        V4_Trailmaking_Script.run_experiment()
+def run_trailmaking_with_args(participant_id, treatment):
+    # Try to call with arguments if possible, else patch the dialog
+    sig = inspect.signature(V4_Trailmaking_Script.run_experiment)
+    if len(sig.parameters) >= 2:
+        return V4_Trailmaking_Script.run_experiment(participant_id, treatment)
+    else:
+        # Patch the dialog to return our values
+        orig_gui_DlgFromDict = getattr(V4_Trailmaking_Script.gui, 'DlgFromDict', None)
+        class DummyDlg:
+            def __init__(self, expInfo, title=None):
+                self.data = [participant_id, treatment]
+                self.OK = True
+            def show(self):
+                return True
+        V4_Trailmaking_Script.gui.DlgFromDict = DummyDlg
+        try:
+            V4_Trailmaking_Script.run_experiment()
+        finally:
+            if orig_gui_DlgFromDict:
+                V4_Trailmaking_Script.gui.DlgFromDict = orig_gui_DlgFromDict
+
+run_trailmaking_with_args(participant_id, treatment)

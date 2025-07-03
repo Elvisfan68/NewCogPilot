@@ -78,9 +78,9 @@ run_pvt_with_args(participant_id, treatment)
 
 # --- Trailmaking ---
 def run_trailmaking_with_args(participant_id, treatment):
-    # Try to call with arguments if possible, else patch the dialog
     sig = inspect.signature(V4_Trailmaking_Script.run_experiment)
-    if len(sig.parameters) >= 2:
+    param_names = list(sig.parameters.keys())
+    if 'participant_id' in param_names and 'treatment' in param_names:
         return V4_Trailmaking_Script.run_experiment(participant_id, treatment)
     else:
         # Patch the dialog to return our values

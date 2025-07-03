@@ -54,52 +54,84 @@ else:
 
 # --- PVT ---
 def run_pvt_with_args(participant_id, treatment):
-    # Try to call with arguments if possible, else patch the dialog
-    sig = inspect.signature(PVT_Script.run_pvt_study)
-    if len(sig.parameters) >= 2:
-        return PVT_Script.run_pvt_study(participant_id, treatment)
-    else:
-        # Patch the dialog to return our values
-        orig_gui_DlgFromDict = getattr(PVT_Script.gui, 'DlgFromDict', None)
-        class DummyDlg:
-            def __init__(self, expInfo, title=None):
-                expInfo['Participant ID'] = participant_id
-                expInfo['Treatment'] = treatment
-                self.data = [participant_id, treatment]
-                self.OK = True
-            def show(self):
-                return True
-        PVT_Script.gui.DlgFromDict = DummyDlg
-        try:
-            PVT_Script.run_pvt_study()
-        finally:
-            if orig_gui_DlgFromDict:
-                PVT_Script.gui.DlgFromDict = orig_gui_DlgFromDict
+    # Patch the dialog to return our values and patch expInfo before the dialog is shown
+    orig_gui_DlgFromDict = getattr(PVT_Script.gui, 'DlgFromDict', None)
+    orig_core_quit = getattr(PVT_Script.core, 'quit', None)
+    class DummyDlg:
+        def __init__(self, expInfo, title=None):
+            expInfo['Participant ID'] = participant_id
+            expInfo['Treatment'] = treatment
+            self.data = [participant_id, treatment]
+            self.OK = True
+        def show(self):
+            return True
+    PVT_Script.gui.DlgFromDict = DummyDlg
+    # Patch expInfo in the module if it exists
+    setattr(PVT_Script, 'expInfo', {'Participant ID': participant_id, 'Treatment': treatment})
+    # Patch core.quit in the module to prevent exit
+    def dummy_core_quit():
+        pass
+    PVT_Script.core.quit = dummy_core_quit
+    # Patch os.path.join to intercept filename creation
+    import os as _os
+    orig_os_path_join = _os.path.join
+    def patched_join(*args):
+        # If this is the filename creation, inject participant_id and treatment
+        if len(args) >= 2 and args[0] == 'PVT Data' and args[1].endswith('_PVT_' + args[1].split('_PVT_')[-1]):
+            timestamp = args[1].split('_PVT_')[-1]
+            if treatment:
+                return orig_os_path_join('PVT Data', f'{participant_id}_{treatment}_PVT_{timestamp}')
+            else:
+                return orig_os_path_join('PVT Data', f'{participant_id}_PVT_{timestamp}')
+        return orig_os_path_join(*args)
+    _os.path.join = patched_join
+    try:
+        PVT_Script.run_pvt_study()
+    finally:
+        if orig_gui_DlgFromDict:
+            PVT_Script.gui.DlgFromDict = orig_gui_DlgFromDict
+        if orig_core_quit:
+            PVT_Script.core.quit = orig_core_quit
+        _os.path.join = orig_os_path_join
 
 run_pvt_with_args(participant_id, treatment)
 
 # --- Trailmaking ---
 def run_trailmaking_with_args(participant_id, treatment):
-    sig = inspect.signature(V4_Trailmaking_Script.run_experiment)
-    param_names = list(sig.parameters.keys())
-    if 'participant_id' in param_names and 'treatment' in param_names:
-        return V4_Trailmaking_Script.run_experiment(participant_id, treatment)
-    else:
-        # Patch the dialog to return our values
-        orig_gui_DlgFromDict = getattr(V4_Trailmaking_Script.gui, 'DlgFromDict', None)
-        class DummyDlg:
-            def __init__(self, expInfo, title=None):
-                expInfo['Participant ID'] = participant_id
-                expInfo['Treatment'] = treatment
-                self.data = [participant_id, treatment]
-                self.OK = True
-            def show(self):
-                return True
-        V4_Trailmaking_Script.gui.DlgFromDict = DummyDlg
-        try:
-            V4_Trailmaking_Script.run_experiment()
-        finally:
-            if orig_gui_DlgFromDict:
-                V4_Trailmaking_Script.gui.DlgFromDict = orig_gui_DlgFromDict
+    # Patch the dialog to return our values and patch expInfo before the dialog is shown
+    orig_gui_DlgFromDict = getattr(V4_Trailmaking_Script.gui, 'DlgFromDict', None)
+    orig_core_quit = getattr(V4_Trailmaking_Script.core, 'quit', None)
+    class DummyDlg:
+        def __init__(self, expInfo, title=None):
+            expInfo['Participant ID'] = participant_id
+            expInfo['Treatment'] = treatment
+            self.data = [participant_id, treatment]
+            self.OK = True
+        def show(self):
+            return True
+    V4_Trailmaking_Script.gui.DlgFromDict = DummyDlg
+    setattr(V4_Trailmaking_Script, 'expInfo', {'Participant ID': participant_id, 'Treatment': treatment})
+    def dummy_core_quit():
+        pass
+    V4_Trailmaking_Script.core.quit = dummy_core_quit
+    import os as _os
+    orig_os_path_join = _os.path.join
+    def patched_join(*args):
+        # If this is the filename creation, inject participant_id and treatment
+        if len(args) >= 2 and args[0] == 'Trailmaking Data' and args[1].endswith('_TMT_Master.csv'):
+            if treatment:
+                return orig_os_path_join('Trailmaking Data', f'{participant_id}_{treatment}_TMT_Master.csv')
+            else:
+                return orig_os_path_join('Trailmaking Data', f'{participant_id}_TMT_Master.csv')
+        return orig_os_path_join(*args)
+    _os.path.join = patched_join
+    try:
+        V4_Trailmaking_Script.run_experiment()
+    finally:
+        if orig_gui_DlgFromDict:
+            V4_Trailmaking_Script.gui.DlgFromDict = orig_gui_DlgFromDict
+        if orig_core_quit:
+            V4_Trailmaking_Script.core.quit = orig_core_quit
+        _os.path.join = orig_os_path_join
 
 run_trailmaking_with_args(participant_id, treatment)

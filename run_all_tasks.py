@@ -1,4 +1,25 @@
-from psychopy import gui
+from psychopy import gui, core
+import sys
+
+# Set a global flag so the tasks know they're being run in sequence
+RUNNING_ALL_TASKS = True
+
+# Patch core.quit and sys.exit to only close the window, not the process
+def patched_core_quit():
+    # Just close all windows, but don't exit the process
+    for win in core.openWindows:
+        try:
+            win.close()
+        except Exception:
+            pass
+    # Do not call sys.exit()
+
+def patched_sys_exit(*args, **kwargs):
+    # Do nothing
+    pass
+
+core.quit = patched_core_quit
+sys.exit = patched_sys_exit
 
 # 1. Ask for participant info once
 expInfo = {'Participant ID': '', 'Treatment': ''}

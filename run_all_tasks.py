@@ -63,6 +63,8 @@ def run_pvt_with_args(participant_id, treatment):
         orig_gui_DlgFromDict = getattr(PVT_Script.gui, 'DlgFromDict', None)
         class DummyDlg:
             def __init__(self, expInfo, title=None):
+                expInfo['Participant ID'] = participant_id
+                expInfo['Treatment'] = treatment
                 self.data = [participant_id, treatment]
                 self.OK = True
             def show(self):
@@ -87,6 +89,8 @@ def run_trailmaking_with_args(participant_id, treatment):
         orig_gui_DlgFromDict = getattr(V4_Trailmaking_Script.gui, 'DlgFromDict', None)
         class DummyDlg:
             def __init__(self, expInfo, title=None):
+                expInfo['Participant ID'] = participant_id
+                expInfo['Treatment'] = treatment
                 self.data = [participant_id, treatment]
                 self.OK = True
             def show(self):

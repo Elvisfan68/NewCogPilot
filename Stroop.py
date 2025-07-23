@@ -1,3 +1,5 @@
+
+
 from psychopy import visual, core, event
 import random
 import csv
@@ -65,7 +67,7 @@ key_map = {'r': 'red', 'g': 'green', 'b': 'blue'}
 
 results = []
 
-for trial in range(10):
+for trial in range(60):  # Doubled from 10
     word = random.choice(words)
     color_name = random.choice(list(colors.keys()))
     color_rgb = colors[color_name]
@@ -128,7 +130,7 @@ spatial_results = []
 positions = {'left': (-300, 0), 'right': (300, 0)}
 spatial_words = ['LEFT', 'RIGHT']
 
-for trial in range(10):
+for trial in range(60):  # Doubled from 10
     word = random.choice(spatial_words)
     pos_name = random.choice(['left', 'right'])
     pos = positions[pos_name]
@@ -159,10 +161,11 @@ for trial in range(10):
     core.wait(0.5)
 
 # End message for Part 2
-end_message.text = "Done with Part 2! Thank you.\nPress any key to continue to Part 3."
+end_message.text = "Done with Part 2! You completed all tasks.\nPress any key to exit."
 end_message.draw()
 win.flip()
 wait_for_key()
+win.close()
 
 # Save Part 2 Results
 with open(filename, 'a', newline='', encoding='utf-8') as f:
@@ -181,34 +184,49 @@ with open(filename, 'a', newline='', encoding='utf-8') as f:
     writer.writerow(['Percent Accuracy (%)', f"{accuracy:.2f}"])
     writer.writerow(['Average RT (ms) Correct Answers', f"{avg_rt:.0f}"])
 
-# === Part 3: Directional Stroop ===
+________________________________
+From: Marco Pasquale Lombardo <marcol@stanford.edu>
+Sent: Wednesday, July 23, 2025 2:28 PM
+To: Colin Sang-Zen Liu <cszliu1@stanford.edu>
+Subject: Re: longer code
+
+that is all of it
+
+________________________________
+From: Marco Pasquale Lombardo
+Sent: Wednesday, July 23, 2025 2:25 PM
+To: Colin Sang-Zen Liu <cszliu1@stanford.edu>
+Subject: longer code
+
+
+    writer.writerow([])
+    writer.writerow(['Summary'])
+    writer.writerow(['Percent Accuracy (%)', f"{accuracy:.2f}"])
+    writer.writerow(['Average RT (ms) Correct Answers', f"{avg_rt:.0f}"])
+
+# === Part 2: Spatial Stroop ===
 
 instruction.text = (
-    "PART 3: Directional Stroop\n\n"
-    "An ASCII arrow with a word below (LEFT or RIGHT) will appear.\n"
-    "Respond to the DIRECTION of the ARROW, ignoring the word.\n\n"
-    "Press 'T' if the arrow points LEFT.\n"
-    "Press 'F' if the arrow points RIGHT.\n\n"
-    "Press any key to begin."
+    "PART 2: Spatial Stroop\n\nA word ('LEFT' or 'RIGHT') will appear on either the left or right side.\n\n"
+    "Press 'T' if the word's meaning matches its position.\nPress 'F' if it does NOT match.\n\nPress any key to start."
 )
 instruction.draw()
 win.flip()
 wait_for_key()
 
-directional_results = []
-arrow_shapes = {'left': '<--', 'right': '-->'}
-arrow_pos = (0, 50)
-label_pos = (0, -50)
+spatial_results = []
+positions = {'left': (-300, 0), 'right': (300, 0)}
+spatial_words = ['LEFT', 'RIGHT']
 
-for trial in range(10):
-    arrow_dir = random.choice(['left', 'right'])
-    word_label = random.choice(['LEFT', 'RIGHT'])
+for trial in range(60):  # Doubled from 10
+    word = random.choice(spatial_words)
+    pos_name = random.choice(['left', 'right'])
+    pos = positions[pos_name]
 
-    arrow_stim = visual.TextStim(win, text=arrow_shapes[arrow_dir], pos=arrow_pos, height=80, color='black')
-    label_stim = visual.TextStim(win, text=word_label, pos=label_pos, height=40, color='black')
-
-    arrow_stim.draw()
-    label_stim.draw()
+    text_stim.text = word
+    text_stim.color = 'black'
+    text_stim.pos = pos
+    text_stim.draw()
     win.flip()
 
     start_time = core.getTime()
@@ -220,37 +238,38 @@ for trial in range(10):
         core.quit()
 
     response = keys[0].lower()
-    correct = (response == 't' and arrow_dir == 'left') or (response == 'f' and arrow_dir == 'right')
+    match = (word.lower() == pos_name)
+    correct = (response == 't' and match) or (response == 'f' and not match)
 
-    directional_results.append([trial + 1, arrow_dir, word_label, response, correct, round(rt * 1000), participant_name, group, timestamp])
+    spatial_results.append([trial + 1, word, pos_name, response, correct, round(rt * 1000), participant_name, group, timestamp])
 
     feedback.text = "Correct!" if correct else "Wrong!"
     feedback.draw()
     win.flip()
     core.wait(0.5)
 
-# End message for Part 3
-end_message.text = "Done with Part 3! You completed all tasks.\nPress any key to exit."
+# End message for Part 2
+end_message.text = "Done with Part 2! You completed all tasks.\nPress any key to exit."
 end_message.draw()
 win.flip()
 wait_for_key()
 win.close()
 
-# Save Part 3 Results
+# Save Part 2 Results
 with open(filename, 'a', newline='', encoding='utf-8') as f:
     writer = csv.writer(f)
     writer.writerow([])
-    writer.writerow(['=== Directional Stroop Task Results ==='])
-    writer.writerow(['Trial', 'Arrow_Direction', 'Word_Label', 'Response', 'Correct', 'Reaction_Time_ms', 'Participant', 'Group', 'Timestamp'])
-    writer.writerows(directional_results)
+    writer.writerow(['=== Spatial Stroop Task Results ==='])
+    writer.writerow(['Trial', 'Word', 'Position_Shown', 'Response', 'Correct', 'Reaction_Time_ms', 'Participant', 'Group', 'Timestamp'])
+    writer.writerows(spatial_results)
 
-    correct_trials = sum(1 for r in directional_results if r[4])
-    accuracy = (correct_trials / len(directional_results)) * 100 if directional_results else 0
-    avg_rt = sum(r[5] for r in directional_results if r[4]) / correct_trials if correct_trials > 0 else 0
+    correct_trials = sum(1 for r in spatial_results if r[4])
+    accuracy = (correct_trials / len(spatial_results)) * 100 if spatial_results else 0
+    avg_rt = sum(r[5] for r in spatial_results if r[4]) / correct_trials if correct_trials > 0 else 0
 
     writer.writerow([])
     writer.writerow(['Summary'])
     writer.writerow(['Percent Accuracy (%)', f"{accuracy:.2f}"])
     writer.writerow(['Average RT (ms) Correct Answers', f"{avg_rt:.0f}"])
 
-print(f"✅ Directional Stroop results appended to {filename}")
+
